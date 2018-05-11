@@ -1,0 +1,417 @@
+#include <stdio.h>
+#include <malloc.h>
+#include <string.h>
+#include <limits.h>
+#define List struct list
+#define Special struct special	
+#define Spec struct spec
+Special{
+    char  element;
+    int quantity;
+};
+
+
+Special *CreateNewSpecial (char  symbol, int i){
+    Special *tmp = (Special*) malloc(sizeof(Special));
+    tmp -> element = symbol;
+    tmp -> quantity = i;
+    char element;
+    char code[200];
+};
+
+List{
+    char element;
+    int quantity;
+    List *next;
+    List *left;
+    List *right;
+};
+
+
+
+Spec {
+    char element;
+    char code[200];
+};
+
+Spec *CreateNewSpec (char symbol, char str[200]){
+    Spec *tmp = (Spec*)malloc(sizeof(Spec));
+    tmp -> element = symbol;
+    //printf ("%s", str);
+    strcpy (tmp -> code, str);
+    return tmp;
+}
+
+//creating element
+List *init_list(int quantity, char symbol){
+    List *tmp = (List*) malloc(sizeof(List));
+    tmp->element = symbol;
+    tmp->quantity = quantity;
+    tmp->next = NULL;
+    tmp->right = NULL;
+    tmp->left = NULL;
+    return tmp;
+}
+
+List *add_element (List *el, List *list){
+    List *origin = list;
+    List *tmp = list;
+    if (!list)
+        return el;
+    if (!tmp->next){
+    	tmp->next = el;
+    	return origin;
+    }
+    while (tmp->next){
+        if (el -> quantity >= tmp-> next -> quantity )
+            tmp = tmp -> next;
+        else {
+            el -> next = tmp-> next;
+            tmp -> next = el;
+            tmp = tmp -> next; // ???
+            return origin;
+        }
+    }
+    tmp -> next = el;
+    return origin;
+}
+
+// ñîçäàíèå ñàìîãî ëèñòà
+List *create_tree (List *L, int num){
+    // äîëæíû áûòü 2 ñèòóàöèè êîãäà 1 ýëåìåíò èëè 2 
+    if ( num == 1 || num == 2)
+        return L;           // êàðî÷å ýòî â èíêîäåðå íàäî
+    
+    // åñëè ó íàñ 3 è áîëåå ýëåìåíòîâ
+    
+    List *tmp;
+    List *tmp_1 = L;
+    List * element;
+    List * tmp_2;
+    
+    while (num > 0){
+        
+        tmp = tmp_1 -> next;
+        element = init_list(tmp->quantity + tmp->next->quantity, ' ');
+
+        element -> right = tmp;
+        element -> left = tmp->next;
+        
+        tmp_2 = tmp_1;
+        tmp_1 -> next = tmp -> next -> next;
+        tmp_1 = add_element (element, tmp_1);
+		
+        num--;
+    }
+    return L;
+    
+}
+
+// ôóíêöèÿ îáõîäà äåðåâà
+void tree_traversal (List *L, char str[200], Spec **M){
+    char q[200]="1";
+    char l[200]="0";
+    char m[200];
+    char p[200];
+    if (L->right){
+        strcpy (m,str);
+        strcat (m,l);
+        tree_traversal (L->right,m, M);
+    }
+    
+    if (L->left){
+        strcpy (p, str);
+        strcat (p,q);
+        tree_traversal (L->left,p, M);
+    }
+    
+    int i =0;
+    while (M[i])
+        i++;
+        
+    if (!L->left && !L->right)
+        M[i] = CreateNewSpec (L->element, str);
+    
+    i=0;
+    return;
+}
+
+void tree_print (Spec **M, FILE *fin, FILE *fout){
+	int i = 0;
+	int length = 0;
+	int code = 0;
+	char l [200];
+	//fseek( fout , 2, SEEK_SET ); 
+	while (M[i]!= NULL){
+		
+		printf ("%c ", M[i]->element);
+		fprintf (fout,"%c%s", M[i]->element, M[i]->code);
+		i++;
+	}
+	return;
+}
+
+void printing(Spec **M, FILE *fin, FILE *fout){
+    //char c [20]="101011";
+     //printf ("%d", c);
+    
+    
+    int mask = 0;	
+    int i = 0, limit = 0, length = 0;
+    fseek( fin , 0, SEEK_SET ); 
+    char symbol= getc(fin);
+    symbol= getc(fin);
+    while ((symbol = getc(fin))!= EOF){
+    	while (M[i]->element != symbol)
+    		i++;
+    	
+    	length = strlen (M[i]->code);
+    
+    	
+    	char l [200];
+		strcpy (l, M[i]->code);			// íóæíî ëè ýòî???7
+    	while (length >= 0){
+    		
+    		if (l[strlen (M[i]->code) - length] == '1'){
+    			//printf ("DDD");
+    			mask = mask << 1;
+    			mask = mask | 1;
+    		}
+    		if (l[strlen (M[i]->code) - length] == '0'){
+    		
+    			mask = mask << 1;
+    			mask = mask | 0;
+    		}
+    		limit++;
+    		length --;
+    		if (limit == 8){
+    			fprintf (fout,"%c", mask);
+    			printf ("%d ", mask);
+    			limit = 0;
+    			mask = 0;
+    		}
+    	}
+    	i = 0;
+    }
+    if (limit != 8 ){
+    	length = 8 -limit;
+    	while (i!= 8){
+    		mask = mask << 1;
+    		i++;
+    	}
+    //		printf ("num %d",  num);
+    	fprintf (fout,"%c", mask);
+    	printf ("%d ", mask);
+    	fseek( fout , 5, SEEK_SET ); 
+   		fprintf (fout, "%d", length);
+    }
+    return;
+}
+
+
+void encoder (FILE *fin, FILE *fout){
+    char  symbol;
+    symbol = getc(fin);
+    Special** arr_special = (Special**) malloc(sizeof(Special *)*(200));
+    int i;
+    for ( i = 0; i < 200; i++)
+        arr_special[i] = NULL;
+    i=0;
+    while (( symbol = getc(fin) ) != EOF){
+        //fprintf (fout, "%c ", symbol);
+        while( i < 200){
+        	if (arr_special[i]!= NULL)
+            	if (arr_special[i] -> element == symbol){
+                    arr_special[i] -> quantity ++;
+                    i = 200;
+                }
+            
+			if (arr_special[i] == NULL){
+                arr_special [i] = CreateNewSpecial (symbol, 1);
+                i = 200;
+            }
+            
+            
+        i++;
+        }
+        i = 0;
+    } 
+   
+    //âñòàâêà â ñïèñîê 
+    List * L = NULL;
+    L = add_element (init_list (0,'0'),L);
+    i=0;
+    while (arr_special[i]!= NULL){
+        L = add_element (init_list (arr_special[i] -> quantity, arr_special[i]-> element ), L);
+        //printf ("%d ", arr_special[i] -> quantity);
+        i ++;
+    }
+    
+    
+    List *tmp = L -> next;
+    //L = L -> next;
+    int num = 0;
+    while (tmp){
+        //fprintf (fout, "%c%d ", tmp->element, tmp->quantity);
+        tmp =tmp->next;
+        num ++;
+    }
+    //printf ("%d ", num);
+    // ñîçäàëè äåðåâî 
+    
+    //if (num == 1 || numm == 2){
+    Spec **M   = (Spec**) malloc(sizeof(Spec)*200);
+    if (num == 1){
+    	
+    	M[0] = NULL;
+    	char str_[200] = "1";
+    	M[0] = CreateNewSpec (L->next->element, str_);
+    }
+    else{
+    	
+    //}
+    L = create_tree (L , num-1);
+    // ïðîâåðèëè ÷òî äåðåâî ñîçäàëîñü
+    tmp = L-> next;
+    //fprintf (fout, "%d ", tmp->left->right->quantity);       
+	 //tmp =tmp->next;
+    free (arr_special);
+     
+    char str[200] = "0";
+    for ( i = 0; i < 200; i++)
+        M[i] = NULL;
+    
+	tree_traversal (tmp->right,str,M);
+    char str_[200] = "1";
+    // 2 ñëó÷àÿ ïîòîìó ÷òî ñ ïóñòîé ñòðîêîé íå ðàáîòàåò
+    
+    tree_traversal (tmp->left, str_,M);
+    //fprintf (fout, "--> %s ", M[3]->code);
+	}
+    fprintf (fout, "d%d   \n",num);
+    i =0;
+    while (M[i]){
+    	printf ("%s ", M[i]->code);
+    	i++;
+    }
+    //PrintTree(L->next, 0);
+
+	tree_print (M,fin,fout);
+    printing (M,fin,fout);
+    fclose (fin);
+    fclose (fout);
+    free (M);
+    free(L);
+    return;
+}
+
+void recovery (char str[200], Spec **M,int i){
+	
+}
+void decoder (FILE *fin, FILE *fout){
+
+	char symbol;
+
+	symbol = fgetc(fin);
+	int number, residue, i, code;
+	fscanf (fin, "%d %d", &number, &residue);
+	//printf ("-->%d %d", number, residue);
+	fseek (fin,6,SEEK_SET);
+	
+	Spec **M   = (Spec**) malloc(sizeof(Spec)*200);
+	for ( i = 0; i < 200; i++)
+        M[i] = NULL;	
+	i = 0;
+	int vestige;
+	
+    List * L = NULL;
+    List *tmp;
+    L = add_element (init_list (0,'0'),L); // ñîçäàíèå ãîëîâû
+    //L = add_element (init_list (1,'0'),L); // ñîçäàíèå äåðåâå
+	symbol = getc (fin);
+	printf ("->%c", symbol);
+	symbol = getc (fin);
+	int num = 10;
+	char element;
+	while (number > 0){
+		element = getc (fin);
+		num ++;
+		tmp = L;
+		while (element == '1' || element == '0'){
+			num ++;
+			if (element == '1'){
+				if (tmp->left)
+					tmp = tmp->left;
+				else{
+					tmp->left = init_list (0,'1');
+					tmp = tmp->left;
+				}
+				
+			}
+			
+			if (element == '0'){
+				if (tmp->right)
+					tmp = tmp->right;
+				else {
+					tmp->right = init_list (0,'0');
+					tmp = tmp->right;
+				}	
+				
+			}
+				
+			element = getc (fin);
+		}	
+		tmp -> element = symbol;
+		printf ("%c ", tmp->element);
+		symbol = element;
+		number --;
+	}
+	int y;
+	int g;
+	printf (" --%c",symbol);
+	int tmp1 = 1;
+	//num++;
+	 while (tmp1 ){
+	 	//if (ferror (fin))
+	 	//	printf ("sosihuy");
+		y = fgetc (fin);
+		num++;
+		if (y == -1){
+			fseek (fin,num,SEEK_SET);
+			g = fgetc (fin);
+			num++;
+			if (g == -1 )
+				tmp1 = 0;
+			else{
+				printf ("26 ");
+				printf ("%d ", g);
+				num++;
+			}
+		}
+		else
+			printf ("%d ", y);	
+
+	}
+	
+	return;
+}
+int main(){
+    FILE *fin, *fout;
+    fin=fopen("in.txt", "r");
+    fout=fopen("out.txt", "w");
+    char g;
+    fscanf (fin, "%c", &g);
+    if (g == 'c'){
+        encoder (fin, fout);
+     	fin = fopen("out.txt", "r");
+		fout = fopen ("out2.txt", "w");
+		decoder (fin,fout);
+    }
+    /*if (g == 'd')
+        decoder (fin, fout); 1 2 4 8  3 7 15
+        */
+    //g = g & "111";
+    //fprintf (fout, " --> %c ", g);
+    char m[8] = "123";
+    return 0;
+}
